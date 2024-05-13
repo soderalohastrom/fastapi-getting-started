@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-from rerankers import CohereReranker
+from rerankers import Reranker
 from typing import List
 
 app = FastAPI()
-reranker = CohereReranker(api_key='n1ytpDT5S9jVqY1abqvqoD6flMgo8M25UJce9fLy')
+reranker = Reranker("cohere", lang='en', api_key='n1ytpDT5S9jVqY1abqvqoD6flMgo8M25UJce9fLy')
 
 class Document(BaseModel):
     doc_id: int = Field(..., description="The unique ID of the document")
@@ -22,13 +22,14 @@ class RerankResponse(BaseModel):
 async def rerank_documents(rerank_request: RerankRequest):
     docs = [doc.text for doc in rerank_request.documents]
     doc_ids = [doc.doc_id for doc in rerank_request.documents]
-    reranked_results = reranker.rerank(
+    reranked_results = reranker.rank(
         query=rerank_request.query,
-        documents=docs,
+        docs=docs,
+        doc_ids=doc_ids,
         top_n=rerank_request.top_n
     )
     reranked_documents = [
         Document(doc_id=doc_id, text=text)
-        for doc_id, text in zip(doc_ids, reranked_results)
+        for doc_id, text in zip(reranked_results['doc_ids'], reranked_results['docs'])
     ]
     return RerankResponse(reranked_documents=reranked_documents)
