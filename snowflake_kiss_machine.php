@@ -161,27 +161,46 @@ if (isset($fetch_response['result']['vector'])) {
                 'summary' => $summary
             ]);
         }
-    
-        // Rerank the documents using the Cohere Reranker API
-        $ch = curl_init('https://api.cohere.ai/v1/rerank');
+    // Rerank the documents using the FastAPI app
+        $rerank_url = 'https://kiss-405-4e8cc86f-e6nyxhnj.onporter.run/rerank';
+        $ch = curl_init($rerank_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $cohere_api_key
+            'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            'model' => 'rerank-english-v2.0',
             'query' => $candidate_chunk,
             'documents' => $documents,
-            'top_n' => 20,
-            'return_documents' => true
+            'top_n' => 20
         ]));
         $rerank_response = json_decode(curl_exec($ch), true);
         curl_close($ch);
-    
+
         // Extract the reranked documents
-        $reranked_documents = $rerank_response['results'];
+        $reranked_documents = $rerank_response['reranked_documents'];
+
+        
+        // // Rerank the documents using the Cohere Reranker API
+        // $ch = curl_init('https://api.cohere.ai/v1/rerank');
+        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        //     'Content-Type: application/json',
+        //     'Authorization: Bearer ' . $cohere_api_key
+        // ]);
+        // curl_setopt($ch, CURLOPT_POST, true);
+        // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        //     'model' => 'rerank-english-v2.0',
+        //     'query' => $candidate_chunk,
+        //     'documents' => $documents,
+        //     'top_n' => 20,
+        //     'return_documents' => true
+        // ]));
+        // $rerank_response = json_decode(curl_exec($ch), true);
+        // curl_close($ch);
+    
+        // // Extract the reranked documents
+        // $reranked_documents = $rerank_response['results'];
     
         // Clear the distances array
         $distances = [];

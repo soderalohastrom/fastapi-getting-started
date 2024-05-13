@@ -4,7 +4,7 @@ from rerankers import CohereReranker
 from typing import List
 
 app = FastAPI()
-reranker = CohereReranker(api_key='your_cohere_api_key')
+reranker = CohereReranker(api_key='n1ytpDT5S9jVqY1abqvqoD6flMgo8M25UJce9fLy')
 
 class Document(BaseModel):
     doc_id: int = Field(..., description="The unique ID of the document")
