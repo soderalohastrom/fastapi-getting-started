@@ -150,18 +150,18 @@ if (isset($fetch_response['result']['vector'])) {
 
         foreach ($query_response['result'] as $match) {
             $payload = $match['payload'];
-            $prospect_id = $payload['profile_id'];
-            $city = $coordinates[$prospect_id]['city'];
-            $summary = $coordinates[$prospect_id]['chunk'];
+            $profile_id = $payload['profile_id'];
+            $city = $coordinates[$profile_id]['city'];
+            $summary = $coordinates[$profile_id]['chunk'];
 
             // Add the document data as a JSON-encoded string to the documents array
             $documents[] = json_encode([
-                'profile_id' => $prospect_id,
-                'city' => $city,
-                'summary' => $summary
+                'doc_id' => $profile_id,
+                'text' => $summary
             ]);
         }
-    // Rerank the documents using the FastAPI app
+
+        // Rerank the documents using the FastAPI app
         $rerank_url = 'https://kiss-405-4e8cc86f-e6nyxhnj.onporter.run/rerank';
         $ch = curl_init($rerank_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -180,42 +180,15 @@ if (isset($fetch_response['result']['vector'])) {
         // Extract the reranked documents
         $reranked_documents = $rerank_response['reranked_documents'];
 
-        
-        // // Rerank the documents using the Cohere Reranker API
-        // $ch = curl_init('https://api.cohere.ai/v1/rerank');
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        //     'Content-Type: application/json',
-        //     'Authorization: Bearer ' . $cohere_api_key
-        // ]);
-        // curl_setopt($ch, CURLOPT_POST, true);
-        // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        //     'model' => 'rerank-english-v2.0',
-        //     'query' => $candidate_chunk,
-        //     'documents' => $documents,
-        //     'top_n' => 20,
-        //     'return_documents' => true
-        // ]));
-        // $rerank_response = json_decode(curl_exec($ch), true);
-        // curl_close($ch);
-    
-        // // Extract the reranked documents
-        // $reranked_documents = $rerank_response['results'];
-    
-        // Clear the distances array
-        $distances = [];
-    
         // Update the distances based on the reranked documents
         foreach ($reranked_documents as $reranked_document) {
-            $document_data = json_decode($reranked_document['document']['text'], true);
-            $profile_id = $document_data['profile_id'];
-    
+            $profile_id = $reranked_document['doc_id'];
+
             // Find the corresponding data in the $coordinates array
             if (isset($coordinates[$profile_id])) {
                 $distances[$profile_id] = getDistance($candidate_coordinates, $coordinates[$profile_id]['location']);
             }
         }
-    }
 
         // Sort the distances in descending order
         arsort($distances);
