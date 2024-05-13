@@ -4,7 +4,8 @@ from rerankers import Reranker
 from typing import List
 
 app = FastAPI()
-reranker = Reranker("cohere", lang='en', api_key='n1ytpDT5S9jVqY1abqvqoD6flMgo8M25UJce9fLy')
+# ranker = Reranker("cohere", lang='en', api_key='n1ytpDT5S9jVqY1abqvqoD6flMgo8M25UJce9fLy')
+ranker = Reranker("colbert")
 
 class Document(BaseModel):
     doc_id: int = Field(..., description="The unique ID of the document")
@@ -13,7 +14,6 @@ class Document(BaseModel):
 class RerankRequest(BaseModel):
     query: str = Field(..., description="The query to rank the documents against")
     documents: List[Document] = Field(..., description="The documents to be reranked")
-    top_n: int = Field(20, description="The number of top documents to return")
 
 class RerankResponse(BaseModel):
     reranked_documents: List[Document] = Field(..., description="The reranked documents")
@@ -22,14 +22,13 @@ class RerankResponse(BaseModel):
 async def rerank_documents(rerank_request: RerankRequest):
     docs = [doc.text for doc in rerank_request.documents]
     doc_ids = [doc.doc_id for doc in rerank_request.documents]
-    reranked_results = reranker.rank(
+    reranked_results = ranker.rank(
         query=rerank_request.query,
         docs=docs,
-        doc_ids=doc_ids,
-        top_n=rerank_request.top_n
+        doc_ids=doc_ids
     )
     reranked_documents = [
-        Document(doc_id=doc_id, text=text)
-        for doc_id, text in zip(reranked_results['doc_ids'], reranked_results['docs'])
+        Document(doc_id=result.doc_id, text=result.text)
+        for result in reranked_results.results
     ]
     return RerankResponse(reranked_documents=reranked_documents)
